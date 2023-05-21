@@ -4,7 +4,52 @@ A collection of useful Next.js tricks
 
 ## Avoid PostgreSQL `connection slots` Error with Development Server
 
-TODO: https://github.com/vercel/next.js/discussions/26427#discussioncomment-898067
+The Next.js dev server uses Fast Refresh to update the app in the browser when app code is changed, re-running the code to achieve this. If the code has stateful operations in it, including creation of a connection to a database (eg. PostgreSQL, MongoDB), then these stateful operations will be re-run.
+
+In the case of code which connects to a database (as shown below) this will cause new connections to be created on each code change, and the old connections will not be closed:
+
+```ts
+// util/database.ts
+
+import postgres from 'postgres';
+
+export const sql = postgres();
+```
+
+Since PostgreSQL has a maximum of 100 connections by default, these connections accumulating over time will lead to exhaustion of the available connection slots and the following error:
+
+```
+PostgresError: remaining connection slots are reserved for non-replication superuser connections
+```
+
+This has been documented to happen in both the `pages/` directory and the App Router:
+
+- `pages/` directory: [`vercel/next.js#26427` (discussion)](https://github.com/vercel/next.js/discussions/26427)
+- App Router: [`vercel/next.js#45483`](https://github.com/vercel/next.js/issues/45483)
+
+The current workaround to avoid the issue is to store the first database connection in a property of the Node.js `globalThis` object and prevent creation of any further connections if the property already exists:
+
+```ts
+// util/database.ts
+
+import postgres from 'postgres';
+
+declare module globalThis {
+  let postgresSqlClient: ReturnType<typeof postgres> | undefined;
+}
+
+// Connect only once to the database
+// https://github.com/vercel/next.js/discussions/26427#discussioncomment-898067
+function connectOnceToDatabase() {
+  if (!globalThis.postgresSqlClient) {
+    globalThis.postgresSqlClient = postgres();
+  }
+
+  return globalThis.postgresSqlClient;
+}
+
+export const sql = connectOnceToDatabase();
+```
 
 ## Content Security Policy (CSP)
 

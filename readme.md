@@ -2,6 +2,15 @@
 
 A collection of useful Next.js tricks
 
+## Avoid PostgreSQL `connection slots` Error with Development Server
+
+TODO: https://github.com/vercel/next.js/discussions/26427#discussioncomment-898067
+
+## Content Security Policy (CSP)
+
+- TODO: CSP example for pages/ dir with middleware and reading x-nonce header in pages/\_document.tsx
+- TODO: CSP example for App Router with middleware and reading x-nonce header in app/page.tsx
+
 ## Type Check Responses from Route Handlers
 
 To add TypeScript type checking of responses in your [Route Handlers](https://nextjs.org/docs/app/building-your-application/routing/router-handlers):
@@ -71,12 +80,3 @@ To add TypeScript type checking of responses in your [Route Handlers](https://ne
      return NextResponse.json({ animal: updatedAnimal }); // ✅ Response body type checked
    }
    ```
-
-## CSP
-
-- TODO: pages/ dir with middleware and reading x-nonce header in pages/\_document.tsx
-- TODO: App Router with middleware and reading x-nonce header in app/page.tsx
-
-## Singleton PostgreSQL
-
-TODO: https://github.com/vercel/next.js/discussions/26427#discussioncomment-898067

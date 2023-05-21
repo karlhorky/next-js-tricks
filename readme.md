@@ -11,6 +11,7 @@ To add TypeScript type checking of responses in your [Route Handlers](https://ne
 
    ```ts
    // app/api/animals/[animalId]/route.ts
+
    import { NextRequest, NextResponse } from 'next/server';
    import { z } from 'zod';
    import { updateAnimalById } from '@/database/animals';
@@ -32,11 +33,12 @@ To add TypeScript type checking of responses in your [Route Handlers](https://ne
      request: NextRequest,
      { params }: { params: { animalId: string } },
    ): Promise<NextResponse<AnimalResponseBodyPut>> {
+     // 2. Return type set
      const animalId = Number(params.animalId);
 
      if (!animalId) {
        return NextResponse.json(
-         { error: 'Invalid animal id' },
+         { error: 'Invalid animal id' }, // ✅ Response body type checked
          { status: 400 },
        );
      }
@@ -45,6 +47,7 @@ To add TypeScript type checking of responses in your [Route Handlers](https://ne
 
      if (!result.success) {
        return NextResponse.json(
+         // ✅ Response body type checked
          {
            error:
              'Invalid request body: firstName or type missing from request body',
@@ -61,12 +64,12 @@ To add TypeScript type checking of responses in your [Route Handlers](https://ne
 
      if (!updatedAnimal) {
        return NextResponse.json(
-         { error: 'Update of animal failed' },
+         { error: 'Update of animal failed' }, // ✅ Response body type checked
          { status: 404 },
        );
      }
 
-     return NextResponse.json({ animal: updatedAnimal });
+     return NextResponse.json({ animal: updatedAnimal }); // ✅ Response body type checked
    }
    ```
 

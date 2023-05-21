@@ -32,8 +32,7 @@ To add TypeScript type checking of responses in your [Route Handlers](https://ne
    export async function PUT(
      request: NextRequest,
      { params }: { params: { animalId: string } },
-   ): Promise<NextResponse<AnimalResponseBodyPut>> {
-     // 2. Return type set
+   ): /* Return type set */ Promise<NextResponse<AnimalResponseBodyPut>> {
      const animalId = Number(params.animalId);
 
      if (!animalId) {

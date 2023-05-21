@@ -13,7 +13,7 @@ In the case of code which connects to a database (as shown below) this will caus
 
 import postgres from 'postgres';
 
-export const sql = postgres();
+export const sql = postgres(); // 💥 Will lead to PostgreSQL connection slots errors
 ```
 
 Since PostgreSQL has a maximum of 100 connections by default, these connections accumulating over time will lead to exhaustion of the available connection slots and the following error:

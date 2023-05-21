@@ -6,7 +6,7 @@ A collection of useful Next.js tricks
 
 The Next.js dev server uses Fast Refresh to update the app in the browser when app code is changed, re-running the code to achieve this. If the code has stateful operations in it, including creation of a connection to a database (eg. PostgreSQL, MongoDB), then these stateful operations will be re-run.
 
-In the case of code which connects to a database (as shown below) this will cause new connections to be created on each code change, and the old connections will not be closed:
+In the case of code which connects to a database, what this means is that every time the code is changed (or even every time the file is saved without changes), new database connections will be created and the old connections will not be closed:
 
 ```ts
 // util/database.ts

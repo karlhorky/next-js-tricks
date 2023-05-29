@@ -51,43 +51,78 @@ function connectOnceToDatabase() {
 export const sql = connectOnceToDatabase();
 ```
 
-## Prefetch
+## Improve 3rd-Party Service Performance with Resource Hints
 
-Pass a `Link` header with a [`dns-prefetch`](https://developer.mozilla.org/en-US/docs/Web/Performance/dns-prefetch) hint to instruct the browser to resolve a domain name as early as possible (for example, to improve performance of subsequent requests to an API):
+[Resource Hints](https://www.keycdn.com/blog/resource-hints) are instructions contained in HTTP headers or HTML `<link>` tags which direct the browser to connect to required resources such as domains, images, etc. earlier than it would normally, improving performance.
 
-`next.config.js`
+Next.js configures some resource hints by default, but may not add resource hints for everything that you need - eg. Next.js doesn't currently add resource hints for third party services such as Google reCAPTCHA.
 
-```js
-/** @type {import('next').NextConfig} */
-const config = {
-  headers: async () => {
-    // async/await needed for Next.js config type
-    return await [
-      {
-        source: '/(.*)',
-        headers: [
-          // Prefetch DNS record for example API to improve performance in production
-          ...(process.env.NODE_ENV !== 'production'
-            ? []
-            : [
-                {
-                  key: 'Link',
-                  value: '<https://api.example.com/>; rel=dns-prefetch',
-                },
-              ]),
-        ],
-      },
-    ];
-  },
+For example, to improve the performance of external domain names, pass a `Link` HTTP header with [`preconnect`](https://andydavies.me/blog/2019/03/22/improving-perceived-performance-with-a-link-rel-equals-preconnect-http-header/) or [`dns-prefetch`](https://developer.mozilla.org/en-US/docs/Web/Performance/dns-prefetch) values:
+
+`middleware.ts`
+
+```ts
+import { NextResponse } from 'next/server.js';
+
+export function middleware() {
+  const response = NextResponse.next();
+
+  // Configure `preconnect` to connect early to Cloudinary,
+  // improving performance of images on the first page load
+  response.headers.append(
+    'Link',
+    '<https://res.cloudinary.com>; rel=preconnect;',
+  );
+
+  // Configure `preconnect` to connect early to Google
+  // reCAPTCHA domains, improving performance of reCAPTCHA
+  // widget on the first page load
+  //
+  // This is configured only for the pathnames that use
+  // Google reCAPTCHA, to avoid unnecessary connections
+  if (
+    [
+      '/login',
+      '/reset-password-request',
+      '/reset-password',
+      '/signup',
+    ].includes(request.nextUrl.pathname)
+  ) {
+    response.headers.append(
+      'Link',
+      '<https://www.google.com>; rel=preconnect;',
+    );
+    response.headers.append(
+      'Link',
+      '<https://www.gstatic.com>; rel=preconnect; crossorigin=anonymous',
+    );
+  }
+
+  // Configure `dns-prefetch` to resolve DNS record for
+  // example API, improving performance
+  //
+  // This is configured as `dns-prefetch` instead of
+  // `preconnect because the imaginary API in this case
+  // is used later, after the page has loaded
+  response.headers.append(
+    'Link',
+    '<https://api.example.com/>; rel=dns-prefetch',
+  );
+
+  return response;
+}
+
+export const config = {
+  // Run middleware above on all paths
+  matcher: '/:path*',
 };
-
-export default config;
 ```
 
-Things to keep in mind:
+This is also possible to configure using [the `headers` config option in `next.config.js`](https://nextjs.org/docs/app/api-reference/next-config-js/headers).
 
-- Next.js performs some optimizations already on its own, so make sure you are not duplicating these
-- it may be also beneficial to pair `dns-prefetch` with a `preconnect` hint, as mentioned on [web.dev](https://web.dev/preconnect-and-dns-prefetch/), [MDN](https://developer.mozilla.org/en-US/docs/Web/Performance/dns-prefetch#:~:text=Third%2C%20consider%20pairing%20dns%2Dprefetch%20with%20the%20preconnect%20hint.%20While%20dns%2Dprefetch%20only%20performs%20a%20DNS%20lookup%2C%20preconnect%20establishes%20a%20connection%20to%20a%20server) and [Andy Davies' blog](https://andydavies.me/blog/2019/03/22/improving-perceived-performance-with-a-link-rel-equals-preconnect-http-header/)
+### Caveats
+
+- Next.js performs some optimizations already on its own, so make sure you do not duplicate or interfere with these
 
 ## Security Headers including Content Security Policy (CSP)
 

@@ -126,7 +126,7 @@ This is also possible to configure using [the `headers` config option in `next.c
 
 ## Security Headers including Content Security Policy (CSP)
 
-[Security headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#security) are HTTP headers that servers can send to configure security policies in the browser.
+[Security headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#security) are HTTP headers that servers can send to configure security policies in the browser. [securityheaders.com](https://securityheaders.com/) can be used to show the security headers configured on a domain.
 
 To respond with security headers in a Next.js app, one method is to use [Middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware) to set headers on the request and response. This will work for routes using [Dynamic Rendering](https://nextjs.org/docs/app/building-your-application/rendering/static-and-dynamic-rendering#dynamic-rendering) for both the [App Router](https://nextjs.org/docs/app) and the [Pages Router](https://nextjs.org/docs/pages) (caveat: this cannot be used for routes which use [Static Rendering](https://nextjs.org/docs/app/building-your-application/rendering/static-and-dynamic-rendering#static-rendering-default)).
 
@@ -270,8 +270,6 @@ export const config = {
   matcher: '/:path*',
 };
 ```
-
-You can test the security headers configured on your domain using [securityheaders.com](https://securityheaders.com/).
 
 ### App Router
 

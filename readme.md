@@ -130,7 +130,7 @@ This is also possible to configure using [the `headers` config option in `next.c
 
 To respond with security headers in a Next.js app, one method is to use [Middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware) to set headers on the request and response. This will work for routes using [Dynamic Rendering](https://nextjs.org/docs/app/building-your-application/rendering/static-and-dynamic-rendering#dynamic-rendering) for both the [App Router](https://nextjs.org/docs/app) and the [Pages Router](https://nextjs.org/docs/pages) (caveat: this cannot be used for routes which use [Static Rendering](https://nextjs.org/docs/app/building-your-application/rendering/static-and-dynamic-rendering#static-rendering-default)).
 
-Below is a recommended configuration for security headers in a Next.js app, if it were using an API and Google reCAPTCHA and Cloudinary as a third party services:
+Below is a recommended configuration for security headers in a Next.js app, if it were using an API, Google reCAPTCHA and Cloudinary as a third party services:
 
 `middleware.ts`
 

@@ -407,6 +407,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 }
 ```
 
+### References
+
+- [Next.js CSP example app (App Router) (`Sprokets/nextjs-csp-report-only`)](https://github.com/Sprokets/nextjs-csp-report-only)
+- [Securing your Next.js 13 application - Engineering with Yagiz](https://www.yagiz.co/securing-your-nextjs-13-application)
+- [Understanding and implementing a proper Content Security Policy with Next.js and Styled Components](https://reesmorris.co.uk/blog/implementing-proper-csp-nextjs-styled-components)
+
 ### Alternatives
 
 1. Set HTTP headers in Next.js using [the `headers` config option in `next.config.js`](https://nextjs.org/docs/app/api-reference/next-config-js/headers) (caveat: cannot generate a nonce for CSP)

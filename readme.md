@@ -53,7 +53,7 @@ export const sql = connectOnceToDatabase();
 
 ## GitHub Actions: Automated Upgrades to Next.js Internal React versions
 
-When using [Renovate Bot](https://github.com/apps/renovate) or [Dependabot](https://github.blog/news-insights/product-news/keep-all-your-packages-up-to-date-with-dependabot/) to automate package upgrades, automatic Next.js versions upgrades may fail because of mismatching `react` and `react-dom` package versions.
+When using [Renovate Bot](https://github.com/apps/renovate) or [Dependabot](https://github.blog/news-insights/product-news/keep-all-your-packages-up-to-date-with-dependabot/) to automate package upgrades, automatic Next.js version upgrades may fail because of mismatching `react` and `react-dom` package versions.
 
 A GitHub Actions workflow can be used to automatically upgrade the `react` and `react-dom` versions in all of a project's `package.json` files to the required version in the Next.js `peerDependencies` (requires [setup of a GitHub fine-grained access token](https://github.com/karlhorky/github-tricks#:~:text=create%20a%20GitHub%20fine%2Dgrained%20personal%20access%20token)):
 

@@ -51,6 +51,158 @@ function connectOnceToDatabase() {
 export const sql = connectOnceToDatabase();
 ```
 
+## GitHub Actions: Automated Upgrades to Next.js Internal React versions
+
+When using [Renovate Bot](https://github.com/apps/renovate) or Dependabot to automate package upgrades, automatic Next.js versions upgrades may fail because of mismatching `react` and `react-dom` package versions.
+
+A GitHub Actions workflow can be used to automatically upgrade the `react` and `react-dom` versions in all of a project's `package.json` files to the required version in the Next.js `peerDependencies` (requires [setup of a GitHub fine-grained access token](https://github.com/karlhorky/github-tricks#:~:text=create%20a%20GitHub%20fine%2Dgrained%20personal%20access%20token):
+
+```yaml
+name: Upgrade to Next.js internal React package version
+
+on: push
+
+jobs:
+  upgrade-to-next-internal-react:
+    name: Upgrade to Next.js internal React package version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - run: npm install --global pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Upgrade to Next.js internal React package version
+        run: |
+          set -e
+
+          matching_pattern="19.0.0-rc-.*-.*"
+
+          # Find all package.json files, omitting node_modules directories
+          packages=$(find . -name 'package.json' -not -path '*/node_modules/*')
+
+          # Check React version in Next.js, if installed
+          if [ -f "node_modules/next/package.json" ]; then
+            # Extract the React version from peerDependencies
+            react_peer_dependency=$(jq -r '.peerDependencies.react // empty' node_modules/next/package.json)
+            if [[ -z "$react_peer_dependency" ]]; then
+              echo "React peerDependency not found in Next.js package.json"
+              exit 0
+            fi
+
+            # Extract version after '||' and trim spaces
+            next_react_version=$(echo "$react_peer_dependency" | awk -F '\\|\\|' '{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+
+            if [[ "$next_react_version" =~ $matching_pattern ]]; then
+              echo "React version in Next.js matches: $next_react_version"
+            else
+              echo "React version in Next.js does not match, aborting."
+              exit 0
+            fi
+          else
+            echo "Next.js not installed, skipping Next.js React version check."
+            exit 0
+          fi
+
+          # For each package.json, check if react/react-dom versions match the pattern, then update only the ones that do
+          declare -A lockfiles
+
+          for package in $packages; do
+            dir=$(dirname "$package")
+
+            # Initialize the jq script dynamically based on matching dependencies
+            jq_script='.'
+
+            # Check React versions in package.json
+            version_react=$(jq -r '.dependencies.react // empty' "$package" || true)
+            version_react_dom=$(jq -r '.dependencies["react-dom"] // empty' "$package" || true)
+            version_dev_react=$(jq -r '.devDependencies.react // empty' "$package" || true)
+            version_dev_react_dom=$(jq -r '.devDependencies["react-dom"] // empty' "$package" || true)
+
+            # Update only the versions that match the pattern
+            if [[ "$version_react" =~ $matching_pattern ]]; then
+              jq_script="$jq_script | .dependencies.react = \$react_version"
+            fi
+
+            if [[ "$version_react_dom" =~ $matching_pattern ]]; then
+              jq_script="$jq_script | .dependencies[\"react-dom\"] = \$react_version"
+            fi
+
+            if [[ "$version_dev_react" =~ $matching_pattern ]]; then
+              jq_script="$jq_script | .devDependencies.react = \$react_version"
+            fi
+
+            if [[ "$version_dev_react_dom" =~ $matching_pattern ]]; then
+              jq_script="$jq_script | .devDependencies[\"react-dom\"] = \$react_version"
+            fi
+
+            # Only update the package.json if any dependency was updated
+            if [ "$jq_script" != '.' ]; then
+              echo "Updating $package"
+
+              # Execute the dynamically built jq command
+              jq --arg react_version "$next_react_version" "$jq_script" "$package" > tmp.$$.json && mv tmp.$$.json "$package"
+
+              # Check for lockfiles and run the appropriate package manager
+              if [ -f "$dir/package-lock.json" ]; then
+                lockfiles["$dir"]="npm"
+              elif [ -f "$dir/yarn.lock" ]; then
+                lockfiles["$dir"]="yarn"
+              elif [ -f "$dir/pnpm-lock.yaml" ]; then
+                lockfiles["$dir"]="pnpm"
+              fi
+            else
+              echo "No matching React versions in $package, skipping update."
+            fi
+          done
+
+          if [ ${#lockfiles[@]} -eq 0 ]; then
+            echo "No packages updated, exiting."
+            exit 0
+          fi
+
+          # Install dependencies in all locations where package.json was updated
+          for dir in "${!lockfiles[@]}"; do
+            manager=${lockfiles[$dir]}
+            echo "Running $manager install in $dir"
+            case "$manager" in
+              npm)
+                (cd "$dir" && npm install)
+                ;;
+              yarn)
+                (cd "$dir" && yarn install)
+                ;;
+              pnpm)
+                (cd "$dir" && pnpm install)
+                ;;
+            esac
+          done
+
+          # Commit changes, if any
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add .
+
+          if git diff-index --quiet HEAD --; then
+            echo "No changes to commit, exiting."
+            exit 0
+          fi
+
+          # Use the React version from Next.js for the commit message
+          git commit -m "Upgrade React packages to $next_react_version"
+
+          # Push changes using OAuth2 token
+          git push https://oauth2:${{ secrets.UPGRADE_TO_NEXT_INTERNAL_REACT_GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}
+```
+
 ## Improve 3rd-Party Service Performance with Resource Hints
 
 [Resource Hints](https://www.keycdn.com/blog/resource-hints) are instructions contained in HTTP headers or HTML `<link>` tags which direct the browser to connect to required resources such as domains, images, etc. earlier than it would normally, improving performance.

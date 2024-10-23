@@ -66,6 +66,8 @@ jobs:
   upgrade-to-next-internal-react:
     name: Upgrade to Next.js internal React package version
     runs-on: ubuntu-latest
+    # Skip workflow run if last committer was not Renovate Bot
+    if: github.event.head_commit.author.name == 'renovate[bot]'
     steps:
       - uses: actions/checkout@v4
         with:

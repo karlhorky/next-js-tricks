@@ -203,6 +203,10 @@ jobs:
           git push https://oauth2:${{ secrets.UPGRADE_TO_NEXT_INTERNAL_REACT_GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}
 ```
 
+This will create commits like this in the repo, which will also trigger any further checks to be run on the commit:
+
+![Screenshot 2024-10-23 at 12 39 33](https://github.com/user-attachments/assets/03eca81f-f746-4930-9c98-52ebc767878b)
+
 ## Improve 3rd-Party Service Performance with Resource Hints
 
 [Resource Hints](https://www.keycdn.com/blog/resource-hints) are instructions contained in HTTP headers or HTML `<link>` tags which direct the browser to connect to required resources such as domains, images, etc. earlier than it would normally, improving performance.

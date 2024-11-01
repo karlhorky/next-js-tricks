@@ -57,6 +57,8 @@ When using [Renovate Bot](https://github.com/apps/renovate) or [Dependabot](http
 
 A GitHub Actions workflow can be used to automatically upgrade the `react` and `react-dom` versions in all of a project's `package.json` files to the required version in the Next.js `peerDependencies` (requires [setup of a GitHub fine-grained access token](https://github.com/karlhorky/github-tricks#:~:text=create%20a%20GitHub%20fine%2Dgrained%20personal%20access%20token)):
 
+`.github/workflows/upgrade-to-next-internal-react.yml`
+
 ```yaml
 name: Upgrade to Next.js internal React package version
 

@@ -73,14 +73,15 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
+          cache: 'pnpm'
 
-      - run: npm install --global pnpm
-
-      - name: Install dependencies
-        run: pnpm install
+      - run: pnpm install
 
       - name: Upgrade to Next.js internal React package version
         run: |
@@ -146,14 +147,16 @@ jobs:
               jq_script="$jq_script | .devDependencies[\"react-dom\"] = \$react_version"
             fi
 
-            # Only update the package.json if any dependency was updated
+            # Update the package.json if any dependency matched the pattern
             if [ "$jq_script" != '.' ]; then
               echo "Updating $package"
-
-              # Execute the dynamically built jq command
               jq --arg react_version "$next_react_version" "$jq_script" "$package" > tmp.$$.json && mv tmp.$$.json "$package"
+            else
+              echo "No matching React versions in $package, skipping update."
+            fi
 
-              # Check for lockfiles and run the appropriate package manager
+            # Run package manager install if package.json was updated or if it is in the root directory
+            if [ "$jq_script" != '.' ] || [ "$dir" = "." ]; then
               if [ -f "$dir/package-lock.json" ]; then
                 lockfiles["$dir"]="npm"
               elif [ -f "$dir/yarn.lock" ]; then
@@ -161,8 +164,6 @@ jobs:
               elif [ -f "$dir/pnpm-lock.yaml" ]; then
                 lockfiles["$dir"]="pnpm"
               fi
-            else
-              echo "No matching React versions in $package, skipping update."
             fi
           done
 
@@ -183,7 +184,7 @@ jobs:
                 (cd "$dir" && yarn install)
                 ;;
               pnpm)
-                (cd "$dir" && pnpm install)
+                (cd "$dir" && pnpm install --no-frozen-lockfile)
                 ;;
             esac
           done

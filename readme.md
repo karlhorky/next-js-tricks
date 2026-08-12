@@ -55,7 +55,9 @@ export const sql = connectOnceToDatabase();
 
 [Next.js includes a custom TypeScript plugin](https://nextjs.org/docs/app/api-reference/config/typescript#ide-plugin) for diagnostics such as missing types on `metadata` exports. However, the plugin diagnostics [are not reported by `tsc` or a `next` CLI subcommand](https://github.com/vercel/next.js/issues/97229).
 
-[The TypeScript team have up until now (August 2026) rejected the feature request that `tsc` execute TypeScript language-service plugins](https://github.com/microsoft/TypeScript/issues/16607).
+The TypeScript team have up until now (August 2026) rejected the feature request that `tsc` execute TypeScript language-service plugins:
+
+- https://github.com/microsoft/TypeScript/issues/16607
 
 To report the Next.js plugin diagnostics in the terminal and CI, install [`@typescript-eslint/project-service`](https://www.npmjs.com/package/@typescript-eslint/project-service):
 
@@ -142,7 +144,7 @@ Run the same command in CI to fail the workflow for Next.js TypeScript plugin di
 
 <img width="2876" height="1790" alt="GitHub Actions failing on the Next.js metadata TS71008 warning from next-tsc" src="https://github.com/user-attachments/assets/ec9d6e12-0d87-4829-88b4-84a5b5b07053" />
 
-This uses the direct TypeScript project service approach from [`effect-language-service diagnostics`](https://github.com/Effect-TS/language-service/blob/5e4d380b6fcd20f048dd8d41515bcd9ea47ffda4/packages/language-service/src/cli/diagnostics.ts#L341-L465) and the [Next.js TypeScript plugin test harness](https://github.com/vercel/next.js/blob/cb36e1d5946eb3bf6473b535e9537a54f257ba27/test/development/typescript-plugin/test-utils.ts#L34-L100).
+This uses the direct TypeScript project service approach from the [Next.js TypeScript plugin test harness](https://github.com/vercel/next.js/blob/cb36e1d5946eb3bf6473b535e9537a54f257ba27/test/development/typescript-plugin/test-utils.ts#L34-L100) and [`effect-language-service diagnostics`](https://github.com/Effect-TS/language-service/blob/5e4d380b6fcd20f048dd8d41515bcd9ea47ffda4/packages/language-service/src/cli/diagnostics.ts#L341-L465).
 
 - Proof of concept: https://github.com/karlhorky/poc-next-js-type-checker-cli
 

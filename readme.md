@@ -51,6 +51,101 @@ function connectOnceToDatabase() {
 export const sql = connectOnceToDatabase();
 ```
 
+## Check Next.js TypeScript Plugin Diagnostics in Terminal
+
+[Next.js includes a custom TypeScript plugin](https://nextjs.org/docs/app/api-reference/config/typescript#ide-plugin) for diagnostics such as missing types on `metadata` exports. However, the plugin diagnostics [are not reported by `tsc` or a `next` CLI subcommand](https://github.com/vercel/next.js/issues/97229).
+
+[The TypeScript team have up until now (August 2026) rejected the feature request that `tsc` execute TypeScript language-service plugins](https://github.com/microsoft/TypeScript/issues/16607).
+
+To report the Next.js plugin diagnostics in the terminal and CI, install [`@typescript-eslint/project-service`](https://www.npmjs.com/package/@typescript-eslint/project-service):
+
+```bash
+pnpm add --save-dev @typescript-eslint/project-service
+```
+
+Make sure the existing `tsconfig.json` enables the Next.js plugin:
+
+```json
+{
+  "compilerOptions": {
+    "plugins": [{ "name": "next" }]
+  }
+}
+```
+
+Add the following script:
+
+`scripts/next-tsc.ts`
+
+```ts
+import { createProjectService } from '@typescript-eslint/project-service';
+import ts from 'typescript';
+
+const fileNames = ts.sys.readDirectory(ts.sys.resolvePath('app'), [
+  '.ts',
+  '.tsx',
+]);
+const { service } = createProjectService({
+  options: { loadTypeScriptPlugins: true },
+});
+const diagnostics = fileNames.flatMap((fileName) => {
+  service.openClientFile(fileName);
+
+  const fileDiagnostics = service
+    .getScriptInfo(fileName)!
+    .getDefaultProject()
+    .getLanguageService(true)
+    .getSemanticDiagnostics(fileName);
+
+  service.closeClientFile(fileName);
+  return fileDiagnostics;
+});
+
+if (diagnostics.length > 0) {
+  console.error(
+    ts.formatDiagnostics(diagnostics, {
+      getCanonicalFileName: (name) => name,
+      getCurrentDirectory: ts.sys.getCurrentDirectory,
+      getNewLine: () => '\n',
+    }),
+  );
+  ts.sys.exit(1);
+}
+```
+
+Add a `package.json` script:
+
+```json
+{
+  "scripts": {
+    "next-tsc": "node scripts/next-tsc.ts"
+  }
+}
+```
+
+Run the Next.js TypeScript plugin check:
+
+```bash
+pnpm next-tsc
+```
+
+An `app/layout.tsx` file that exports `metadata` without the `Metadata` type from `next` now reports TS71008 and exits with code 1:
+
+<img width="2874" height="1804" alt="VS Code showing the Next.js metadata TS71008 warning and next-tsc exit code 1" src="https://github.com/user-attachments/assets/c8c80486-4955-44e2-a0a3-a13a82ba0f8c" />
+
+Run the same command in CI to fail the workflow for Next.js TypeScript plugin diagnostics:
+
+```yaml
+- name: Run the Next.js TypeScript checker
+  run: pnpm next-tsc
+```
+
+<img width="2876" height="1790" alt="GitHub Actions failing on the Next.js metadata TS71008 warning from next-tsc" src="https://github.com/user-attachments/assets/ec9d6e12-0d87-4829-88b4-84a5b5b07053" />
+
+This uses the direct TypeScript project service approach from [`effect-language-service diagnostics`](https://github.com/Effect-TS/language-service/blob/5e4d380b6fcd20f048dd8d41515bcd9ea47ffda4/packages/language-service/src/cli/diagnostics.ts#L341-L465) and the [Next.js TypeScript plugin test harness](https://github.com/vercel/next.js/blob/cb36e1d5946eb3bf6473b535e9537a54f257ba27/test/development/typescript-plugin/test-utils.ts#L34-L100).
+
+- Proof of concept: https://github.com/karlhorky/poc-next-js-type-checker-cli
+
 ## GitHub Actions: Automated Upgrades to Next.js Internal React versions
 
 When using [Renovate Bot](https://github.com/apps/renovate) or [Dependabot](https://github.blog/news-insights/product-news/keep-all-your-packages-up-to-date-with-dependabot/) to automate package upgrades, automatic Next.js version upgrades may fail because of mismatching `react` and `react-dom` package versions between the project's `package.json` and the internal versions specified in Next.js.

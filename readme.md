@@ -384,9 +384,9 @@ This is also possible to configure using [the `headers` config option in `next.c
 
 ## Protect Route Handlers from Cross-Site Request Forgery (CSRF)
 
-Next.js [Server Actions reject cross-origin requests by default](https://nextjs.org/docs/app/guides/data-security#allowed-origins-advanced), but [Route Handlers do not have the same protection](https://github.com/vercel/next.js/issues/101251). A form on another website can submit JSON as `Content-Type: text/plain` without a CORS preflight, including to a login Route Handler which replaces the visitor's session with the attacker's account (login CSRF).
+[Next.js Route Handlers do not reject cross-site form submissions by default](https://github.com/vercel/next.js/issues/101251), allowing attacks such as login CSRF.
 
-To reject these cross-site write requests, compare the `Origin` host with the request host in [`proxy.ts`](https://nextjs.org/docs/app/api-reference/file-conventions/proxy):
+To reject cross-site write requests, check the `Origin` host in [`proxy.ts`](https://nextjs.org/docs/app/api-reference/file-conventions/proxy):
 
 `proxy.ts`
 
@@ -422,9 +422,7 @@ export function proxy(request: NextRequest) {
 }
 ```
 
-This matches Route Handlers under `/api`, including those inside route groups like `(auth)`. Adjust `matcher` if your Route Handlers use other URLs. Requests with safe methods or without an `Origin` header are allowed, eg. native apps, server-to-server requests and webhooks.
-
-The check compares hosts (including ports), not protocols. Behind a reverse proxy, make sure the proxy sets `x-forwarded-host` to the public host and overwrites any value supplied by the client.
+Adjust `matcher` for your Route Handler URLs. Behind a reverse proxy, ensure it overwrites `x-forwarded-host` with the public host. The check compares hosts and ports, not protocols.
 
 - Code: [Next.js and Expo Router API origin checks](https://gist.github.com/karlhorky/61f751daf34799caee18f4f6d895ee29)
 - Reproduction: https://github.com/karlhorky/repro-next-js-route-handlers-no-csrf-protection

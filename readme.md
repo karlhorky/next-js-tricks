@@ -417,7 +417,7 @@ export function proxy(request: NextRequest) {
 }
 ```
 
-If you allow cross-origin Server Actions with `allowedOrigins`, allow those origins in this check too.
+If you allow cross-origin Server Actions with [`allowedOrigins`](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverActions#allowedorigins), allow those origins in this check too.
 
 ## Security Headers including Content Security Policy (CSP)
 

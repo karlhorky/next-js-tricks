@@ -382,6 +382,43 @@ This is also possible to configure using [the `headers` config option in `next.c
 
 - Next.js performs some optimizations already on its own, so make sure you do not duplicate or interfere with these
 
+## Protect Route Handlers from Cross-Site Request Forgery (CSRF)
+
+[Next.js Route Handlers do not reject cross-site form submissions by default](https://github.com/vercel/next.js/issues/101251), allowing attacks such as [login CSRF](https://github.com/karlhorky/repro-next-js-route-handlers-no-csrf-protection).
+
+To reject cross-site write requests, check the `Origin` host in [`proxy.ts`](https://nextjs.org/docs/app/api-reference/file-conventions/proxy):
+
+`proxy.ts`
+
+```ts
+// Security: Reject write requests from other websites (CSRF protection)
+// to prevent attacks like unwanted account changes or login CSRF
+//
+// Next.js Route Handlers do not yet have built-in CSRF protection
+// - https://github.com/vercel/next.js/discussions/101245
+
+import type { NextRequest } from 'next/server';
+
+export function proxy(request: NextRequest) {
+  const origin = request.headers.get('origin');
+
+  // Allow safe methods and non-browser clients without Origin
+  if (['GET', 'HEAD', 'OPTIONS'].includes(request.method) || origin === null) {
+    return;
+  }
+
+  if (
+    !URL.canParse(origin) ||
+    new URL(origin).host !==
+      (request.headers.get('x-forwarded-host') || request.headers.get('host'))
+  ) {
+    return new Response('Cross-site request forbidden', { status: 403 });
+  }
+}
+```
+
+If you allow cross-origin Server Actions with [`allowedOrigins`](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverActions#allowedorigins), allow those origins in this check too.
+
 ## Security Headers including Content Security Policy (CSP)
 
 [Security headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#security) are HTTP headers that servers can send to configure security policies in the browser. [securityheaders.com](https://securityheaders.com/) can be used to show the security headers configured on a domain.

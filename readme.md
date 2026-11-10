@@ -384,7 +384,7 @@ This is also possible to configure using [the `headers` config option in `next.c
 
 ## Protect Route Handlers from Cross-Site Request Forgery (CSRF)
 
-[Next.js Route Handlers do not reject cross-site form submissions by default](https://github.com/vercel/next.js/issues/101251), allowing attacks such as login CSRF.
+[Next.js Route Handlers do not reject cross-site form submissions by default](https://github.com/vercel/next.js/issues/101251), allowing attacks such as [login CSRF](https://github.com/karlhorky/repro-next-js-route-handlers-no-csrf-protection).
 
 To reject cross-site write requests, check the `Origin` host in [`proxy.ts`](https://nextjs.org/docs/app/api-reference/file-conventions/proxy):
 
@@ -398,11 +398,6 @@ To reject cross-site write requests, check the `Origin` host in [`proxy.ts`](htt
 // - https://github.com/vercel/next.js/discussions/101245
 
 import type { NextRequest } from 'next/server';
-
-export const config = {
-  // Route groups like (auth) are omitted from URLs, so this also matches their API routes
-  matcher: '/api/:path*',
-};
 
 export function proxy(request: NextRequest) {
   const origin = request.headers.get('origin');
@@ -422,10 +417,7 @@ export function proxy(request: NextRequest) {
 }
 ```
 
-Adjust `matcher` for your Route Handler URLs. Behind a reverse proxy, ensure it overwrites `x-forwarded-host` with the public host. The check compares hosts and ports, not protocols.
-
-- Code: [Next.js and Expo Router API origin checks](https://gist.github.com/karlhorky/61f751daf34799caee18f4f6d895ee29)
-- Reproduction: https://github.com/karlhorky/repro-next-js-route-handlers-no-csrf-protection
+This applies to all paths. Add exceptions for intentional cross-origin writes, including Server Actions configured with `allowedOrigins`. Behind a reverse proxy, ensure it overwrites `x-forwarded-host` with the public host. The check compares hosts and ports, not protocols.
 
 ## Security Headers including Content Security Policy (CSP)
 

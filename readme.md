@@ -382,6 +382,53 @@ This is also possible to configure using [the `headers` config option in `next.c
 
 - Next.js performs some optimizations already on its own, so make sure you do not duplicate or interfere with these
 
+## Protect Route Handlers from Cross-Site Request Forgery (CSRF)
+
+Next.js [Server Actions reject cross-origin requests by default](https://nextjs.org/docs/app/guides/data-security#allowed-origins-advanced), but [Route Handlers do not have the same protection](https://github.com/vercel/next.js/issues/101251). A form on another website can submit JSON as `Content-Type: text/plain` without a CORS preflight, including to a login Route Handler which replaces the visitor's session with the attacker's account (login CSRF).
+
+To reject these cross-site write requests, compare the `Origin` host with the request host in [`proxy.ts`](https://nextjs.org/docs/app/api-reference/file-conventions/proxy):
+
+`proxy.ts`
+
+```ts
+// Security: Reject write requests from other websites (CSRF protection)
+// to prevent attacks like unwanted account changes or login CSRF
+//
+// Next.js Route Handlers do not yet have built-in CSRF protection
+// - https://github.com/vercel/next.js/discussions/101245
+
+import type { NextRequest } from 'next/server';
+
+export const config = {
+  // Route groups like (auth) are omitted from URLs, so this also matches their API routes
+  matcher: '/api/:path*',
+};
+
+export function proxy(request: NextRequest) {
+  const origin = request.headers.get('origin');
+
+  // Allow safe methods and non-browser clients without Origin
+  if (['GET', 'HEAD', 'OPTIONS'].includes(request.method) || origin === null) {
+    return;
+  }
+
+  if (
+    !URL.canParse(origin) ||
+    new URL(origin).host !==
+      (request.headers.get('x-forwarded-host') || request.headers.get('host'))
+  ) {
+    return new Response('Cross-site request forbidden', { status: 403 });
+  }
+}
+```
+
+This matches Route Handlers under `/api`, including those inside route groups like `(auth)`. Adjust `matcher` if your Route Handlers use other URLs. Requests with safe methods or without an `Origin` header are allowed, eg. native apps, server-to-server requests and webhooks.
+
+The check compares hosts (including ports), not protocols. Behind a reverse proxy, make sure the proxy sets `x-forwarded-host` to the public host and overwrites any value supplied by the client.
+
+- Code: [Next.js and Expo Router API origin checks](https://gist.github.com/karlhorky/61f751daf34799caee18f4f6d895ee29)
+- Reproduction: https://github.com/karlhorky/repro-next-js-route-handlers-no-csrf-protection
+
 ## Security Headers including Content Security Policy (CSP)
 
 [Security headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#security) are HTTP headers that servers can send to configure security policies in the browser. [securityheaders.com](https://securityheaders.com/) can be used to show the security headers configured on a domain.

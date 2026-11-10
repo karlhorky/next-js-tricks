@@ -417,8 +417,6 @@ export function proxy(request: NextRequest) {
 }
 ```
 
-This applies to all paths. Add exceptions for intentional cross-origin writes, including Server Actions configured with `allowedOrigins`. Behind a reverse proxy, ensure it overwrites `x-forwarded-host` with the public host. The check compares hosts and ports, not protocols.
-
 ## Security Headers including Content Security Policy (CSP)
 
 [Security headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#security) are HTTP headers that servers can send to configure security policies in the browser. [securityheaders.com](https://securityheaders.com/) can be used to show the security headers configured on a domain.

@@ -417,6 +417,8 @@ export function proxy(request: NextRequest) {
 }
 ```
 
+If you allow cross-origin Server Actions with `allowedOrigins`, allow those origins in this check too.
+
 ## Security Headers including Content Security Policy (CSP)
 
 [Security headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#security) are HTTP headers that servers can send to configure security policies in the browser. [securityheaders.com](https://securityheaders.com/) can be used to show the security headers configured on a domain.
